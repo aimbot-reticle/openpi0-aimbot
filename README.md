@@ -69,6 +69,7 @@ python examples/real_robot/minitest_egg_in_carton.py
 # expect results similar to [-0.01511198  0.11611952 -0.05221765 -2.14998979  0.08095009  2.1068709 1.12064988  1.        ]
 ```
 
+We provide a sample code to adapt for real robot client at `examples/real_robot/client.py`
 
 
 ----
