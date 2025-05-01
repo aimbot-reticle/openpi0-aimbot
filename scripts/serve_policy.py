@@ -53,6 +53,13 @@ class Args:
 
     # Specifies how to load the policy. If not provided, the default policy for the environment will be used.
     policy: Checkpoint | Default = dataclasses.field(default_factory=Default)
+    
+    use_local_host: bool = True
+    
+    lerobot_repo_id: str | None = None # will load assets "_checkpoints.load_norm_stats(checkpoint_dir / "assets", data_config.asset_id)""
+
+    asset_id: str | None = None
+
 
 
 # Default checkpoints that should be used for each environment.
@@ -89,8 +96,19 @@ def create_policy(args: Args) -> _policy.Policy:
     """Create a policy from the given arguments."""
     match args.policy:
         case Checkpoint():
+            train_config = _config.get_config(args.policy.config)
+            if args.lerobot_repo_id is not None:
+                logging.info(f"LeRobot repo ID: {args.lerobot_repo_id}")
+                object.__setattr__(train_config, "lerobot_repo_id", args.lerobot_repo_id)
+                object.__setattr__(train_config.data, "repo_id", args.lerobot_repo_id)
+                object.__setattr__(train_config.data.base_config, "local_files_only", True)
+            
+            if args.asset_id is not None:
+                logging.info(f"Asset ID: {args.asset_id}")
+                object.__setattr__(train_config.data.assets, "asset_id", args.asset_id)
+                        
             return _policy_config.create_trained_policy(
-                _config.get_config(args.policy.config), args.policy.dir, default_prompt=args.default_prompt
+                train_config, args.policy.dir, default_prompt=args.default_prompt
             )
         case Default():
             return create_default_policy(args.env, default_prompt=args.default_prompt)
@@ -110,7 +128,7 @@ def main(args: Args) -> None:
 
     server = websocket_policy_server.WebsocketPolicyServer(
         policy=policy,
-        host="0.0.0.0",
+        host="0.0.0.0" if not args.use_local_host else "127.0.0.1",
         port=args.port,
         metadata=policy_metadata,
     )

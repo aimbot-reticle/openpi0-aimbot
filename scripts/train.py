@@ -193,7 +193,12 @@ def train_step(
 def main(config: _config.TrainConfig):
     init_logging()
     logging.info(f"Running on: {platform.node()}")
-
+    
+    if config.lerobot_repo_id is not None:
+        logging.info(f"LeRobot repo ID: {config.lerobot_repo_id}")
+        object.__setattr__(config.data, "repo_id", config.lerobot_repo_id)
+        object.__setattr__(config.data.base_config, "local_files_only", True)
+    
     if config.batch_size % jax.device_count() != 0:
         raise ValueError(
             f"Batch size {config.batch_size} must be divisible by the number of devices {jax.device_count()}."

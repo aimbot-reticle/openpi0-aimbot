@@ -1,5 +1,79 @@
-# openpi
+# OpenPi0 with AimBot
 
+This repository is adapted from the original [OpenPi](https://github.com/Physical-Intelligence/openpi/tree/main) codebase by Physical-Intelligence. We sincerely thank the authors for open-sourcing such a valuable model resource.
+
+## Install
+Please install openpi packages as shown in the original [README](#original-readme).  And set up envrinoment varibles accordingly
+```
+export LEROBOT_HOME=...
+export OPENPI_DATA_HOME=...
+export LIBERO_CONFIG_PATH=...
+```
+Install AimBot packages
+```
+cd third_party/AimBot
+pip install -e src
+export PYTHONPATH=$PYTHONPATH:third_party/AimBot/src
+```
+
+## Simulation Experiments
+We provide checkpoints of AimBot augmented Pi0 and Pi0-FAST [here](https://huggingface.co/Yinpei/runs_ckpt/tree/main)
+```
+mkdir runs
+git lfs install
+git clone git@hf.co:Yinpei/runs_ckpt runs/ckpts
+```
+Untar the checkpoints with `tar -xvf xxx.tar`
+
+### Evaluation
+```
+# Terminal 1, use openpi env
+# for pi0
+python scripts/serve_policy.py --port 8001  --lerobot-repo-id large_crosshair_dynamic_default_color  policy:checkpoint --policy.config=pi0_libero --policy.dir=runs/ckpts/pi0_libero/final-pi0-libero-large_crosshair_dynamic_default_color/29999
+# for pi0-fast
+python scripts/serve_policy.py --port 8002  --lerobot-repo-id large_crosshair_dynamic_default_color  policy:checkpoint --policy.config=pi0_fast_libero --policy.dir=runs/ckpts/pi0_fast_libero/final-pi0-fast-libero-large_crosshair_dynamic_default_color/29999
+
+/home/ubuntu/chailab/daiyp/openpi-public/runs/ckpts/pi0_fast_libero/final-pi0-fast-libero-large_crosshair_dynamic_default_color
+
+# Terminal 2, use libero env to evualte libero
+export PYTHONPATH=$PYTHONPATH:$PWD/third_party/AimBot/src
+export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
+python examples/libero/eval_libero_aimbot.py  --model-name eval_libero_<pi0/pi0_fast> --task_suite_name libero_10,libero_goal --port 8001
+```
+
+
+### Training
+We provide lerobot formated data augmented by AimBot [here](https://huggingface.co/datasets/Yinpei/lerobot_data_collection/tree/main). You can follow the [original repo](#original-readme) to compute stats and training.
+```
+python scripts/compute_norm_stats.py --config-name pi0_libero --lerobot-repo-id modified_libero_reticle 
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.99 python scripts/train.py pi0_libero --exp-name=<your-exp-name> --batch-size=32 --overwrite --lerobot_repo_id modified_libero_reticle
+```
+
+## Real-World Experimenets
+We also provide our real-world experiment checkpoins [here](https://huggingface.co/Yinpei/runs_ckpt/tree/realrobot), evaluate with commands as following:
+
+```
+# pi0
+python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_realrobot --policy.dir=runs/ckpts/pi0_realrobot/final-pi0-realrobot_all_tasks_reticle-base/49999
+
+# pi0-fast
+python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_fast_realrobot --policy.dir=runs/ckpts/pi0_fast_realrobot/final-pi0-fast-realrobot_all_tasks_reticle-droid/49999
+```
+
+We provide some samples to check for real robot ckpt
+```
+python examples/real_robot/minitest_ball_in_drawer.py 
+# expect results similar to [-0.40962731  0.75692577 -0.19266555 -1.62441164  1.0104553   1.25835662 -0.3051943   1.      ]
+python examples/real_robot/minitest_cup_in_coffee.py  
+# expect results similar to [-0.07001272 -0.02224026 -0.12195967 -2.75122962  0.25098871  2.64748625 -1.74296515  1.      ]
+python examples/real_robot/minitest_egg_in_carton.py  
+# expect results similar to [-0.01511198  0.11611952 -0.05221765 -2.14998979  0.08095009  2.1068709 1.12064988  1.        ]
+```
+
+
+
+----
+# Original README
 openpi holds open-source models and packages for robotics, published by the [Physical Intelligence team](https://www.physicalintelligence.company/).
 
 Currently, this repo contains two types of models:

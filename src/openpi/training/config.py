@@ -20,6 +20,7 @@ import openpi.models.tokenizer as _tokenizer
 import openpi.policies.aloha_policy as aloha_policy
 import openpi.policies.droid_policy as droid_policy
 import openpi.policies.libero_policy as libero_policy
+import openpi.policies.real_robot_policy as real_robot_policy
 import openpi.shared.download as _download
 import openpi.shared.normalize as _normalize
 import openpi.training.optimizer as _optimizer
@@ -259,14 +260,6 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
 
     @override
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
-        # The repack transform is *only* applied to the data coming from the dataset,
-        # and *not* during inference. We can use it to make inputs from the dataset look
-        # as close as possible to those coming from the inference environment (e.g. match the keys).
-        # Below, we match the keys in the dataset (which we defined in the data conversion script) to
-        # the keys we use in our inference pipeline (defined in the inference script for libero).
-        # For your own dataset, first figure out what keys your environment passes to the policy server
-        # and then modify the mappings below so your dataset's keys get matched to those target keys.
-        # The repack transform simply remaps key names here.
         repack_transform = _transforms.Group(
             inputs=[
                 _transforms.RepackTransform(
@@ -280,34 +273,10 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
                 )
             ]
         )
-
-        # The data transforms are applied to the data coming from the dataset *and* during inference.
-        # Below, we define the transforms for data going into the model (``inputs``) and the transforms
-        # for data coming out of the model (``outputs``) (the latter is only used during inference).
-        # We defined these transforms in `libero_policy.py`. You can check the detailed comments there for
-        # how to modify the transforms to match your dataset. Once you created your own transforms, you can
-        # replace the transforms below with your own.
+        
         data_transforms = _transforms.Group(
             inputs=[libero_policy.LiberoInputs(action_dim=model_config.action_dim, model_type=model_config.model_type)],
             outputs=[libero_policy.LiberoOutputs()],
-        )
-
-        # One additional data transform: pi0 models are trained on delta actions (relative to the first
-        # state in each action chunk). IF your data has ``absolute`` actions (e.g. target joint angles)
-        # you can uncomment the following line to convert the actions to delta actions. The only exception
-        # is for the gripper actions which are always absolute.
-        # In the example below, we would apply the delta conversion to the first 6 actions (joints) and
-        # leave the 7th action (gripper) unchanged, i.e. absolute.
-        # In Libero, the raw actions in the dataset are already delta actions, so we *do not* need to
-        # apply a separate delta conversion (that's why it's commented out). Choose whether to apply this
-        # transform based on whether your dataset uses ``absolute`` or ``delta`` actions out of the box.
-
-        # TODO(karl): comment this out once we have updated the Libero checkpoints to not use
-        # the delta action transform
-        delta_action_mask = _transforms.make_bool_mask(6, -1)
-        data_transforms = data_transforms.push(
-            inputs=[_transforms.DeltaActions(delta_action_mask)],
-            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
         )
 
         # Model transforms include things like tokenizing the prompt and action targets
@@ -315,6 +284,49 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
         model_transforms = ModelTransformFactory()(model_config)
 
         # We return all data transforms for training and inference. No need to change anything here.
+        return dataclasses.replace(
+            self.create_base_config(assets_dirs),
+            repack_transforms=repack_transform,
+            data_transforms=data_transforms,
+            model_transforms=model_transforms,
+            use_quantile_norm=model_config.model_type == ModelType.PI0
+        )
+
+
+
+
+@dataclasses.dataclass(frozen=True)
+class LeRobotRealRobotDataConfig(DataConfigFactory):
+    @override
+    def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
+        repack_transform = _transforms.Group(
+            inputs=[
+                _transforms.RepackTransform(
+                    {
+                        "observation/left_shoulder_image": "left_shoulder_image",
+                        "observation/right_shoulder_image": "right_shoulder_image",
+                        "observation/wrist_image": "wrist_image",
+                        "observation/state": "state",
+                        "actions": "actions",
+                        "prompt": "prompt",
+                    }
+                )
+            ]
+        )
+
+        data_transforms = _transforms.Group(
+            inputs=[real_robot_policy.RealRobotInputs(action_dim=model_config.action_dim, model_type=model_config.model_type)],
+            outputs=[real_robot_policy.RealRobotOutputs()],
+        )
+                
+        delta_action_mask = _transforms.make_bool_mask(7, -1)
+        data_transforms = data_transforms.push(
+            inputs=[_transforms.DeltaActions(delta_action_mask)],
+            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
+        )
+
+        model_transforms = ModelTransformFactory()(model_config)
+
         return dataclasses.replace(
             self.create_base_config(assets_dirs),
             repack_transforms=repack_transform,
@@ -351,9 +363,9 @@ class TrainConfig:
     data: DataConfigFactory = dataclasses.field(default_factory=FakeDataConfig)
 
     # Base directory for config assets (e.g., norm stats).
-    assets_base_dir: str = "./assets"
+    assets_base_dir: str = "runs/assets"
     # Base directory for checkpoints.
-    checkpoint_base_dir: str = "./checkpoints"
+    checkpoint_base_dir: str = "runs/ckpts"
 
     # Random seed that will be used by random generators during training.
     seed: int = 42
@@ -388,6 +400,8 @@ class TrainConfig:
     # eg. if total device is 4 and fsdp devices is 2; then the model will shard to 2 devices and run
     # data parallel between 2 groups of devices.
     fsdp_devices: int = 1
+    
+    lerobot_repo_id: str | None = None
 
     @property
     def assets_dirs(self) -> pathlib.Path:
@@ -481,28 +495,15 @@ _CONFIGS = [
     TrainConfig(
         # Change the name to reflect your model and dataset.
         name="pi0_libero",
-        # Here you define the model config -- In this example we use pi0 as the model
-        # architecture and perform *full* finetuning. in the examples below we show how to modify
-        # this to perform *low-memory* (LORA) finetuning and use pi0-FAST as an alternative architecture.
         model=pi0.Pi0Config(),
-        # Here you define the dataset you are training on. In this example we use the Libero
-        # dataset. For your own dataset, you can change the repo_id to point to your dataset.
-        # Also modify the DataConfig to use the new config you made for your dataset above.
         data=LeRobotLiberoDataConfig(
             repo_id="physical-intelligence/libero",
             base_config=DataConfig(
                 local_files_only=False,  # Set to True for local-only datasets.
-                # This flag determines whether we load the prompt (i.e. the task instruction) from the
-                # ``task`` field in the LeRobot dataset. If set to True, the prompt will show up in
-                # a field called ``prompt`` in the input dict. The recommended setting is True.
                 prompt_from_task=True,
             ),
         ),
-        # Here you define which pre-trained checkpoint you want to load to initialize the model.
-        # This should match the model config you chose above -- i.e. in this case we use the pi0 base model.
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
-        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
-        # Check the base TrainConfig class for a full list of available hyperparameters.
         num_train_steps=30_000,
     ),
     TrainConfig(
@@ -530,16 +531,6 @@ _CONFIGS = [
     ),
     TrainConfig(
         name="pi0_fast_libero",
-        # Here is an example of loading a pi0-FAST model for full finetuning.
-        # Modify action_dim and action_horizon to match your dataset (action horizon is equal to
-        # the desired action chunk length).
-        # The max_token_len is the maximum number of (non-image) tokens the model can handle.
-        # This includes the tokenized prompt, proprioceptive state, and (FAST-tokenized) action tokens.
-        # Choosing this value too small may chop off tokens at the end of your sequence (the code will throw
-        # a warning), while choosing it too large will waste memory (since we pad each batch element to the
-        # max_token_len). A good rule of thumb is to use approx 180 for single-arm robots, and approx 250 for
-        # two-arm robots. Generally, err on the lower side here first, and potentially increase the value if
-        # you see many warnings being thrown during training.
         model=pi0_fast.Pi0FASTConfig(action_dim=7, action_horizon=10, max_token_len=180),
         data=LeRobotLiberoDataConfig(
             repo_id="physical-intelligence/libero",
@@ -576,6 +567,39 @@ _CONFIGS = [
         # Turn off EMA for LoRA finetuning.
         ema_decay=None,
     ),
+    
+     ### Fine-tuning AimBot configs (ours)
+    TrainConfig(
+        name="pi0_fast_realrobot",
+        model=pi0_fast.Pi0FASTConfig(action_dim=8, action_horizon=10),
+        data=LeRobotRealRobotDataConfig(
+            repo_id="real_robot_data",
+            base_config=DataConfig(
+                local_files_only=True,
+                prompt_from_task=True,
+            ),
+        ),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=1e-5, decay_steps=40_000, decay_lr=1e-6),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_droid/params"),
+        num_train_steps=50_000,
+    ),
+    
+    TrainConfig(
+        name="pi0_realrobot",
+        model=pi0.Pi0Config(action_horizon=10),
+        data=LeRobotRealRobotDataConfig(
+            repo_id="real_robot_data",
+            base_config=DataConfig(
+                local_files_only=True,
+                prompt_from_task=True,
+            ),
+        ),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=1e-5, decay_steps=50_000, decay_lr=1e-6),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=50_000,
+    ),
+    
+    
     #
     # Fine-tuning Aloha configs.
     #

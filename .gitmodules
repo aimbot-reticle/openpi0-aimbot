@@ -4,3 +4,6 @@
 [submodule "third_party/libero"]
 	path = third_party/libero
 	url = https://github.com/Lifelong-Robot-Learning/LIBERO.git
+[submodule "third_party/AimBot"]
+	path = third_party/AimBot
+	url = https://github.com/aimbot-reticle/AimBot.git
