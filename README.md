@@ -33,12 +33,11 @@ python scripts/serve_policy.py --port 8001  --lerobot-repo-id large_crosshair_dy
 # for pi0-fast
 python scripts/serve_policy.py --port 8002  --lerobot-repo-id large_crosshair_dynamic_default_color  policy:checkpoint --policy.config=pi0_fast_libero --policy.dir=runs/ckpts/pi0_fast_libero/final-pi0-fast-libero-large_crosshair_dynamic_default_color/29999
 
-/home/ubuntu/chailab/daiyp/openpi-public/runs/ckpts/pi0_fast_libero/final-pi0-fast-libero-large_crosshair_dynamic_default_color
 
 # Terminal 2, use libero env to evualte libero
 export PYTHONPATH=$PYTHONPATH:$PWD/third_party/AimBot/src
 export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
-python examples/libero/eval_libero_aimbot.py  --model-name eval_libero_<pi0/pi0_fast> --task_suite_name libero_10,libero_goal --port 8001
+python examples/libero/eval_libero_aimbot.py  --model-name eval_libero_<pi0/pi0_fast> --task_suite_name libero_10,libero_goal --port 8001/8002
 ```
 
 
@@ -57,7 +56,7 @@ We also provide our real-world experiment checkpoins [here](https://huggingface.
 python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_realrobot --policy.dir=runs/ckpts/pi0_realrobot/final-pi0-realrobot_all_tasks_reticle-base/49999
 
 # pi0-fast
-python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_fast_realrobot --policy.dir=runs/ckpts/pi0_fast_realrobot/final-pi0-fast-realrobot_all_tasks_reticle-droid/49999
+python scripts/serve_policy.py --port 8002  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_fast_realrobot --policy.dir=runs/ckpts/pi0_fast_realrobot/final-pi0-fast-realrobot_all_tasks_reticle-droid/49999
 ```
 
 We provide some samples to check for real robot ckpt
