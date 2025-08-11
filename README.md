@@ -34,7 +34,7 @@ python scripts/serve_policy.py --port 8001  --lerobot-repo-id large_crosshair_dy
 python scripts/serve_policy.py --port 8002  --lerobot-repo-id large_crosshair_dynamic_default_color  policy:checkpoint --policy.config=pi0_fast_libero --policy.dir=runs/ckpts/pi0_fast_libero/final-pi0-fast-libero-large_crosshair_dynamic_default_color/29999
 
 
-# Terminal 2, use libero env to evualte libero
+# Terminal 2, use libero env to evaluate libero
 export PYTHONPATH=$PYTHONPATH:$PWD/third_party/AimBot/src
 export PYTHONPATH=$PYTHONPATH:$PWD/third_party/libero
 python examples/libero/eval_libero_aimbot.py  --model-name eval_libero_<pi0/pi0_fast> --task_suite_name libero_10,libero_goal --port 8001/8002
@@ -49,7 +49,7 @@ XLA_PYTHON_CLIENT_MEM_FRACTION=0.99 python scripts/train.py pi0_libero --exp-nam
 ```
 
 ## Real-World Experimenets
-We also provide our real-world experiment checkpoins [here](https://huggingface.co/Yinpei/runs_ckpt/tree/realrobot), evaluate with commands as following:
+We provide our real-world experiment data [here](https://huggingface.co/datasets/Yinpei/lerobot_data_collection/tree/realrobot/realrobot_all_tasks_reticle) and trained checkpoints [here](https://huggingface.co/Yinpei/runs_ckpt/tree/realrobot). You can evaluate with commands as following:
 
 ```
 # pi0
@@ -59,7 +59,7 @@ python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_task
 python scripts/serve_policy.py --port 8002  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_fast_realrobot --policy.dir=runs/ckpts/pi0_fast_realrobot/final-pi0-fast-realrobot_all_tasks_reticle-droid/49999
 ```
 
-We provide some samples to check for real robot ckpt
+We also provide some samples for model ckpt check
 ```
 python examples/real_robot/minitest_ball_in_drawer.py 
 # expect results similar to [-0.40962731  0.75692577 -0.19266555 -1.62441164  1.0104553   1.25835662 -0.3051943   1.      ]
