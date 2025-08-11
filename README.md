@@ -42,7 +42,7 @@ python examples/libero/eval_libero_aimbot.py  --model-name eval_libero_<pi0/pi0_
 
 
 ### Training
-We provide lerobot formated data augmented by AimBot [here](https://huggingface.co/datasets/Yinpei/lerobot_data_collection/tree/main). You can follow the [original repo](#original-readme) to compute stats and training.
+We provide lerobot-formated LIBERO data augmented by AimBot [here](https://huggingface.co/datasets/Yinpei/lerobot_data_collection/tree/main). You can follow the [original repo](#original-readme) to compute stats and training.
 ```
 python scripts/compute_norm_stats.py --config-name pi0_libero --lerobot-repo-id modified_libero_reticle 
 XLA_PYTHON_CLIENT_MEM_FRACTION=0.99 python scripts/train.py pi0_libero --exp-name=<your-exp-name> --batch-size=32 --overwrite --lerobot_repo_id modified_libero_reticle
