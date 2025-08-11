@@ -48,7 +48,7 @@ python scripts/compute_norm_stats.py --config-name pi0_libero --lerobot-repo-id 
 XLA_PYTHON_CLIENT_MEM_FRACTION=0.99 python scripts/train.py pi0_libero --exp-name=<your-exp-name> --batch-size=32 --overwrite --lerobot_repo_id modified_libero_reticle
 ```
 
-## Real-World Experimenets
+## Real-World Experiments
 We provide our real-world experiment data [here](https://huggingface.co/datasets/Yinpei/lerobot_data_collection/tree/realrobot/realrobot_all_tasks_reticle) and trained checkpoints [here](https://huggingface.co/Yinpei/runs_ckpt/tree/realrobot). You can evaluate with commands as following:
 
 ```
@@ -59,7 +59,7 @@ python scripts/serve_policy.py --port 8001  --lerobot-repo-id realrobot_all_task
 python scripts/serve_policy.py --port 8002  --lerobot-repo-id realrobot_all_tasks_reticle  policy:checkpoint --policy.config=pi0_fast_realrobot --policy.dir=runs/ckpts/pi0_fast_realrobot/final-pi0-fast-realrobot_all_tasks_reticle-droid/49999
 ```
 
-We also provide some samples for model ckpt check
+We also provide some samples for model check
 ```
 python examples/real_robot/minitest_ball_in_drawer.py 
 # expect results similar to [-0.40962731  0.75692577 -0.19266555 -1.62441164  1.0104553   1.25835662 -0.3051943   1.      ]
