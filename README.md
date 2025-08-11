@@ -9,7 +9,7 @@ export LEROBOT_HOME=...
 export OPENPI_DATA_HOME=...
 export LIBERO_CONFIG_PATH=...
 ```
-Install AimBot packages
+Install the [AimBot](https://github.com/aimbot-reticle/openpi0-aimbot) package.
 ```
 cd third_party/AimBot
 pip install -e src
@@ -70,6 +70,16 @@ python examples/real_robot/minitest_egg_in_carton.py
 ```
 
 We provide a sample code to adapt for real robot client at `examples/real_robot/client.py`
+
+## Bibtex
+```
+@article{aimbot,
+  title={AimBot: A Simple Auxiliary Visual Cue to Enhance Spatial Awareness of Visuomotor Policies},
+  author={Dai, Yinpei and Lee, Jayjun and et al},
+  journal={CoRL},
+  year={2025},
+}
+```
 
 
 ----
