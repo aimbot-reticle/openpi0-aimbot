@@ -1,6 +1,6 @@
 # Official Code for AimBot-Pi0
 
-This repository is adapted from the original [OpenPi](https://github.com/Physical-Intelligence/openpi/tree/main) codebase by Physical-Intelligence. We sincerely thank the authors for open-sourcing such a valuable model resource.
+This repository is adapted from the original [OpenPi](https://github.com/Physical-Intelligence/openpi/tree/main) codebase from Physical-Intelligence. We sincerely thank the authors for open-sourcing such a valuable model resource.
 
 ## Install
 Please install openpi packages as shown in the original [README](#original-readme).  And set up envrinoment varibles accordingly
