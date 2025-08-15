@@ -73,8 +73,7 @@ We provide a sample code to adapt for real robot client at `examples/real_robot/
 
 ## Acknowledgement
 This work was supported in part by NSF SES-2128623, NSF CAREER #2337870, and NSF NRI
-#2220876. We would like to thank Dr. Xinyi Wang for insightful discussion. We would also like to
-thank Lambda Labs for providing helpful GH200 computing resources.
+#2220876. We would like to thank Dr. Xinyi Wang for insightful discussions and Dr. Mark Van der Merwe for suggesting the cool model name. We also thank Lambda Labs for providing access to GH200 computing resources.
 
 ## Bibtex
 ```
